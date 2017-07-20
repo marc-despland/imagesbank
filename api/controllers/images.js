@@ -5,6 +5,7 @@ const crypto = require('crypto');
 var stream = require('stream');
 var mongodb = require('mongodb');
 
+var DBPREFIX=process.env.MONGODB_DATABASE || 'imagesbank';
 
 module.exports = {
 	listCollections:listCollections,
@@ -34,27 +35,6 @@ function createId() {
 	return(result);
 }
 
-function createImageId(db,collection) {
-	return new Promise(function(resolve, reject) {
-		var fileid=createId();
-		console.log("Generated id : "+ userid)
-		db.collection(collection).count({"fileid": fileid}).then(function(count){
-			if (count==0) {
-				resolve(fileid);
-			} else {
-				createImageId(db,collection).then(function(fileid) {
-					resolve(fileid);
-				}).catch( function(err) {
-					reject(err);
-				});
-			}
-		}, function(error) {
-			console.log("Failed to count users with fileid");
-			reject(error);
-		});
-	});
-}
-
 function getImage(db,collection,imageid) {
 	return new Promise(function(resolve, reject) {
 		var o_id=database.objectid(imageid);
@@ -81,7 +61,7 @@ function listCollections(req, res) {
 				var message={'code': 403, 'message': 'User not allowed'};
 				res.json(message);
 			} else {
-				var userdb = db.db(user.userid);
+				var userdb = db.db(DBPREFIX+"_"+user.userid);
 				userdb.listCollections().toArray().then(function(collections) {
 					console.log("Collections " +JSON.stringify(collections));
 					var result=new Array();
@@ -127,7 +107,7 @@ function deleteCollection(req, res) {
 				var message={'code': 403, 'message': 'User not allowed'};
 				res.json(message);
 			} else {
-				var userdb = db.db(user.userid);
+				var userdb = db.db(DBPREFIX+"_"+user.userid);
 				var options={};
 				options.bucketName=req.swagger.params.collection.value;
 				console.log("Creation of the Bucket");
@@ -174,7 +154,7 @@ function deleteImage(req, res) {
 				var message={'code': 403, 'message': 'User not allowed'};
 				res.json(message);
 			} else {
-				var userdb = db.db(user.userid);
+				var userdb = db.db(DBPREFIX+"_"+user.userid);
 				var options={};
 				options.bucketName=req.swagger.params.collection.value;
 				var bucket = new mongodb.GridFSBucket(userdb,options);
@@ -221,7 +201,7 @@ function listImages(req, res) {
 				var message={'code': 403, 'message': 'User not allowed'};
 				res.json(message);
 			} else {
-				var userdb = db.db(user.userid);
+				var userdb = db.db(DBPREFIX+"_"+user.userid);
 				var result=new Array();
 				userdb.collection(req.swagger.params.collection.value+".files").find().forEach(function(file) {
 					//{_id" : ObjectId("596f6bb251dfc40342e1e4aa"), "length" : 2818380, "chunkSize" : 261120, "uploadDate" : ISODate("2017-07-19T14:24:50.522Z"),
@@ -268,7 +248,7 @@ function uploadImage(req, res) {
 				res.json(message);
 			} else {
 				//console.log(JSON.stringify(req.swagger.params.image));
-				var userdb = db.db(user.userid);
+				var userdb = db.db(DBPREFIX+"_"+user.userid);
 				var options={};
 				options.bucketName=req.swagger.params.collection.value;
 				var bucket = new mongodb.GridFSBucket(userdb,options);
@@ -322,7 +302,7 @@ function downloadImage(req, res) {
 				res.json(message);
 			} else {
 				//console.log(JSON.stringify(req.swagger.params.image));
-				var userdb = db.db(user.userid);
+				var userdb = db.db(DBPREFIX+"_"+user.userid);
 				var options={};
 				options.bucketName=req.swagger.params.collection.value;
 				var bucket = new mongodb.GridFSBucket(userdb,options);
