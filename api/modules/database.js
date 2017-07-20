@@ -2,6 +2,7 @@
 var util = require('util');
 var mongo = require('mongodb');
 const MongoClient = require('mongodb').MongoClient;
+const ObjectID = require('mongodb').ObjectID;
 
 module.exports = {
   mongodburl:mongodburl,
@@ -43,5 +44,9 @@ function connect() {
 
 function objectid(id) {
 	console.log("try to generate id for "+id);
-	return new mongo.ObjectID(id);
+	var o_id=id;
+	try {
+		o_id=ObjectID.createFromHexString(id);
+	} catch(error) {};
+	return o_id;
 }

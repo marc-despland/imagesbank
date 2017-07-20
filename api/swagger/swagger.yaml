@@ -160,11 +160,11 @@ paths:
             $ref: "#/definitions/ErrorResponse"
   /collections:
     x-swagger-router-controller: images
-    post:
+    get:
       tags:
         - Image
       description: List existing collections
-      operationId: listCollection
+      operationId: listCollections
       parameters:
         - name: ApiKey
           in: header
@@ -183,7 +183,32 @@ paths:
           description: Error
           schema:
             $ref: "#/definitions/ErrorResponse"
-
+  /collections/{collection}:
+    x-swagger-router-controller: images
+    delete:
+      tags:
+        - Image
+      description: Delete a collection and its images
+      operationId: deleteCollection
+      parameters:
+        - name: ApiKey
+          in: header
+          description: The user api-key
+          required: true
+          type: string
+        - name: collection
+          in: path
+          description: The collection to upload the image in
+          required: true
+          type: string
+      responses:
+        "200":
+          description: Deleted
+        # responses may fall through to errors
+        default:
+          description: Error
+          schema:
+            $ref: "#/definitions/ErrorResponse"
   /collections/{collection}/images:
     x-swagger-router-controller: images
     post:
@@ -233,7 +258,7 @@ paths:
           type: string
         - name: collection
           in: path
-          description: The collection to upload the image in
+          description: The collection name
           required: true
           type: string
       responses:
@@ -254,6 +279,8 @@ paths:
         - Image
       description: download an image
       operationId: downloadImage
+      produces:
+        - image/jpeg
       parameters:
         - name: ApiKey
           in: header
@@ -320,9 +347,17 @@ definitions:
       $ref: "#/definitions/Image"
   Image:
     properties:
-      userid:
+      imageid:
         type: string
-      date:
+      length:
+        type: integer
+      contentType:
+        type: string
+      filename:
+        type: string
+      md5:
+        type: string
+      uploadDate:
         type: string
         format: date-time
   Users:

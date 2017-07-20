@@ -9,7 +9,8 @@ module.exports = {
 	listUsers:listUsers,
 	getUser:getUser,
 	updateUser:updateUser,
-	deleteUser:deleteUser
+	deleteUser:deleteUser,
+	checkApiKey:checkApiKey
 };
 
 function sha256(source) {
@@ -67,6 +68,18 @@ function createApiKey(db) {
 		}, function(error) {
 			console.log("Failed to count users with apikey");
 			reject(error);
+		});
+	});
+}
+
+
+function checkApiKey(db, apikey) {
+	return new Promise(function(resolve, reject) {
+		db.collection('users').findOne({"apikey": apikey}).then(function(user) {
+			delete user._id;
+			resolve(user);
+		}).catch(function(err) {
+			reject(err);
 		});
 	});
 }
@@ -175,7 +188,13 @@ function getUser(req, res) {
 					res.statusCode=200;
 					res.json(user);
 				}
+			}).catch(function(err) {
+				console.log(err);
+				res.statusCode=500;
+				var message={'code': 500, 'message': 'We have a database issue'};
+				res.json(message);
 			});
+
 		})
 		.catch(function(err) {
 			console.log(err);
