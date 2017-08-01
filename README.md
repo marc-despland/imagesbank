@@ -22,3 +22,8 @@ If you use a User/Password to connect on MongoDB, make sure the user has the rol
 The API description is provide with a swagger file available in /api/swagger/swagger.yaml
 
 When you run the server, it start a swagger-ui available at http://<server ip>:8080/api/docs
+
+## Version
+
+- 1.0.0 Manage storing and retreiving images
+- 1.1.0 (in progress) Integration of (sharp)[https://github.com/lovell/sharp] to allow creation of thumbnails

@@ -4,6 +4,7 @@ var users = require('./users');
 const crypto = require('crypto');
 var stream = require('stream');
 var mongodb = require('mongodb');
+var sharp = require('sharp');
 
 var DBPREFIX=process.env.MONGODB_DATABASE || 'imagesbank';
 
@@ -13,7 +14,8 @@ module.exports = {
 	listImages:listImages,
 	downloadImage:downloadImage,
 	deleteCollection:deleteCollection,
-	deleteImage:deleteImage
+	deleteImage:deleteImage,
+	downloadThumbnailImage:downloadThumbnailImage
 };
 
 
@@ -325,6 +327,78 @@ function downloadImage(req, res) {
 						userdb.close();
 						db.close();
 						res.end();
+					});
+					//downloadStream.pipe(res);
+				}).catch(function(err) {
+					console.log(err);
+					res.statusCode=500;
+					userdb.close();
+					db.close();
+					var message={'code': 500, 'message': err};
+					res.json(message);
+				});
+			}
+		}).catch(function(err) {
+			console.log(err);
+			res.statusCode=500;
+			db.close();
+			var message={'code': 500, 'message': err};
+			res.json(message);
+		});
+	}).catch(function(err) {
+		console.log(err);
+		res.statusCode=500;
+		var message={'code': 500, 'message': 'We have a database issue'};
+		res.json(message);
+	});
+
+}
+
+function downloadThumbnailImage(req, res) {
+	database.connect().then(function(db) {
+		users.checkApiKey(db, req.swagger.params.ApiKey.value).then(function(user) {
+			if ((user===null) || (user === undefined)) {
+				res.statusCode=403;
+				var message={'code': 403, 'message': 'User not allowed'};
+				res.json(message);
+			} else {
+				//console.log(JSON.stringify(req.swagger.params.image));
+				var userdb = db.db(DBPREFIX+"_"+user.userid);
+				var options={};
+				var width = req.swagger.params.width.value || 700;
+				options.bucketName=req.swagger.params.collection.value;
+				var bucket = new mongodb.GridFSBucket(userdb,options);
+				getImage(userdb, req.swagger.params.collection.value, req.swagger.params.imageid.value).then(function(file) {
+
+					var transformer = sharp().resize(width).on('info', function(info) {
+    					console.log('Image height is ' + info.height);
+  					});
+  					transformer.on('end', function() {
+  						console.log("Transformer ends");
+  						//res.end();
+  					});
+					
+					console.log(bucket);
+					var downloadStream=bucket.openDownloadStream(file._id).on('error', function(error) {
+						console.log("open error : "+ error);
+					});
+					res.statusCode=200;
+					res.contentType(file.contentType);
+					downloadStream.pipe(transformer).pipe(res);
+					console.log("File id : "+file._id);
+					
+					downloadStream.on('error', function(error) {
+						console.log("Download error : "+ error);
+					});
+					/*downloadStream.on('data', function(data) {
+						console.log("Download data : "+ data.length);
+						res.write(data);
+					});*/
+					downloadStream.on('end', function() {
+						console.log("Download ends");
+						userdb.close();
+						db.close();
+						//res.end();
 					});
 					//downloadStream.pipe(res);
 				}).catch(function(err) {
